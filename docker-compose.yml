@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: tcc_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www
+      - hf-cache:/opt/hf-cache
+    depends_on:
+      - mysql
+      - ollama
+    mem_limit: 1g
+
+  mysql:
+    image: mysql:8.4
+    container_name: tcc_mysql
+    environment:
+      MYSQL_DATABASE: tcc_ia
+      MYSQL_USER: tcc
+      MYSQL_PASSWORD: tcc
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"   # 3307 no host para não conflitar com um MySQL local
+    volumes:
+      - mysql-data:/var/lib/mysql
+    mem_limit: 768m
+
+  ollama:
+    image: ollama/ollama
+    container_name: tcc_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    # 3g basta para o qwen3:1.7b, mas o qwen3:4b e morto por falta de memoria.
+    # O WSL tem 7,6 GB, entao 5g cabe junto com os outros dois containers.
+    mem_limit: 5g
+
+volumes:
+  hf-cache:
+  mysql-data:
+  ollama-data:
